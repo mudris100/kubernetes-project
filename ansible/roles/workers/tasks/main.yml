@@ -1,0 +1,10 @@
+---
+- name: Read join command from local file
+  ansible.builtin.set_fact:
+    workers_kube_join_cmd: "{{ lookup('file', '/tmp/workers_kube_join_cmd.sh') | trim }}"
+
+- name: Join cluster
+  ansible.builtin.command: "{{ workers_kube_join_cmd }}"
+  args:
+    creates: /etc/kubernetes/kubelet.conf
+  when: workers_kube_join_cmd is defined

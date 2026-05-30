@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-app
+spec:
+  revisionHistoryLimit: 10
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 # spin up 1 extra pod before terminating old
+      maxUnavailable: 0 # never terminate a pod until new one is Ready
+  selector:
+    matchLabels:
+      app: blog-app
+  template:
+    metadata:
+      labels:
+        app: blog-app
+    spec:
+      containers:
+        - name: blog-app
+          image: mudris100/blog-app:p2
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health # Spring Boot Actuator health endpoint
+              port: 8080
+            initialDelaySeconds: 30 # Spring Boot needs time to start
+            periodSeconds: 5
+            failureThreshold: 3
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: DB_URL
+              value: "jdbc:postgresql://192.168.88.101:5432/blogdb"
+            - name: REDIS_HOST
+              value: "192.168.88.101"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: blog-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blog-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blog-secrets
+                  key: REDIS_PASSWORD

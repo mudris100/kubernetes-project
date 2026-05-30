@@ -1,0 +1,42 @@
+---
+- name: Initialize cluster
+  ansible.builtin.command: kubeadm init --pod-network-cidr={{ master_pod_network_cidr }}
+  args:
+    creates: /etc/kubernetes/admin.conf
+
+- name: Create kube config directory
+  ansible.builtin.file:
+    path: /home/{{ ansible_user }}/.kube
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0700"
+
+- name: Copy kubeconfig
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/{{ ansible_user }}/.kube/config
+    remote_src: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0600"
+
+- name: Install Flannel CNI
+  ansible.builtin.command: kubectl apply -f {{ master_flannel_manifest_url }}
+  environment:
+    KUBECONFIG: /home/{{ ansible_user }}/.kube/config
+  when: master_install_cni | bool
+  changed_when: false
+
+- name: Get join command
+  ansible.builtin.command: kubeadm token create --print-join-command
+  register: master_join_command
+  changed_when: false
+
+- name: Save join command to local file
+  ansible.builtin.copy:
+    content: "{{ master_join_command.stdout }}\n"
+    dest: /tmp/workers_kube_join_cmd.sh
+    mode: "0644"
+  delegate_to: localhost
+  become: false

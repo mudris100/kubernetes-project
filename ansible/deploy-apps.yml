@@ -1,0 +1,21 @@
+- name: Deploy Applications
+  hosts: k8s_master
+  become: false
+
+  tasks:
+    - name: Apply Argo CD Applications
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('file', playbook_dir + '/../k8s/argocd/' + item) | from_yaml }}"
+      loop:
+        - blog-app.yml # now secrets exist in Git, pods will start
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg:
+          - "========================================="
+          - "  Argo CD, Infra, and Apps Deployed"
+          - "========================================="
+          - "  Argo CD is now managing the workloads."
+          - "  Check the Argo CD UI to monitor sync status."
+          - "========================================="
