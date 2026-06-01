@@ -343,3 +343,4 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 **Versioned image tags over `latest`.** Every Docker image is pushed with a unique tag (e.g. `p1`, `p2`, `p3`). Using `latest` would prevent Argo CD from detecting a diff and auto-syncing on new image pushes.
 
 **`terraform.tfstate` is excluded from Git** — it may contain sensitive infrastructure details and should be stored securely (e.g. Terraform Cloud, S3 backend) in a production environment.
+
